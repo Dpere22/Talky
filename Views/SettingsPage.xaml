@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="Talky.Views.SettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:helpers="using:Talky.Helpers"
+    xmlns:toolkit="using:CommunityToolkit.WinUI.Controls">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel
+            MaxWidth="960"
+            Padding="36,24,36,36"
+            Spacing="4">
+            <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Settings" />
+
+            <!--  Profile  -->
+            <TextBlock Style="{StaticResource SettingsSectionHeaderStyle}" Text="Profile" />
+            <toolkit:SettingsCard Description="Friends see this name when you connect. They can still give you their own nickname." Header="Display name">
+                <toolkit:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE77B;" />
+                </toolkit:SettingsCard.HeaderIcon>
+                <TextBox
+                    Width="240"
+                    MaxLength="64"
+                    Text="{x:Bind ViewModel.DisplayName, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+            </toolkit:SettingsCard>
+
+            <!--  Network  -->
+            <TextBlock Style="{StaticResource SettingsSectionHeaderStyle}" Text="Network" />
+            <toolkit:SettingsCard Description="Friends add you with this address." Header="Your address">
+                <toolkit:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE909;" />
+                </toolkit:SettingsCard.HeaderIcon>
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        IsTextSelectionEnabled="True"
+                        Text="{x:Bind ViewModel.LocalAddressesText}" />
+                    <Button Command="{x:Bind ViewModel.CopyAddressesCommand}" Content="Copy" />
+                </StackPanel>
+            </toolkit:SettingsCard>
+            <toolkit:SettingsCard Description="TCP carries chat and screen sharing, UDP carries voice. Both use this port." Header="Port">
+                <toolkit:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE839;" />
+                </toolkit:SettingsCard.HeaderIcon>
+                <NumberBox
+                    Width="140"
+                    Maximum="65535"
+                    Minimum="1024"
+                    SpinButtonPlacementMode="Compact"
+                    Value="{x:Bind ViewModel.Port, Mode=TwoWay}" />
+            </toolkit:SettingsCard>
+            <InfoBar
+                IsClosable="False"
+                IsOpen="{x:Bind ViewModel.PortNeedsRestart, Mode=OneWay}"
+                Message="Restart Talky to start using the new port. Friends will need your new address."
+                Severity="Warning" />
+            <InfoBar
+                IsClosable="False"
+                IsOpen="{x:Bind helpers:Ui.Not(ViewModel.IsListening)}"
+                Message="{x:Bind ViewModel.ListenError}"
+                Severity="Error" />
+            <TextBlock
+                Margin="2,4,0,0"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Style="{StaticResource CaptionTextBlockStyle}"
+                Text="If friends can't reach you, make sure Windows Firewall allows Talky on private networks."
+                TextWrapping="WrapWholeWords" />
+
+            <!--  Voice  -->
+            <TextBlock Style="{StaticResource SettingsSectionHeaderStyle}" Text="Voice" />
+            <toolkit:SettingsCard Header="Microphone">
+                <toolkit:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE720;" />
+                </toolkit:SettingsCard.HeaderIcon>
+                <ComboBox
+                    MinWidth="260"
+                    ItemsSource="{x:Bind ViewModel.InputDevices}"
+                    SelectedItem="{x:Bind ViewModel.SelectedInputDevice, Mode=TwoWay}" />
+            </toolkit:SettingsCard>
+            <toolkit:SettingsCard Header="Speakers / headphones">
+                <toolkit:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE7F5;" />
+                </toolkit:SettingsCard.HeaderIcon>
+                <ComboBox
+                    MinWidth="260"
+                    ItemsSource="{x:Bind ViewModel.OutputDevices}"
+                    SelectedItem="{x:Bind ViewModel.SelectedOutputDevice, Mode=TwoWay}" />
+            </toolkit:SettingsCard>
+            <toolkit:SettingsCard Description="{x:Bind ViewModel.NoiseSuppressionDescription}" Header="Noise suppression">
+                <toolkit:SettingsCard.HeaderIcon>
+                    <PathIcon Data="M1,8 h2 v4 h-2 z M5,5 h2 v10 h-2 z M9,1 h2 v18 h-2 z M13,4 h2 v12 h-2 z M17,7 h2 v6 h-2 z" />
+                </toolkit:SettingsCard.HeaderIcon>
+                <ToggleSwitch IsEnabled="{x:Bind ViewModel.NoiseSuppressionAvailable}" IsOn="{x:Bind ViewModel.NoiseSuppression, Mode=TwoWay}" />
+            </toolkit:SettingsCard>
+            <toolkit:SettingsCard Description="Use Windows' communications processing (echo cancellation, auto gain). Helpful without headphones. Windows may lower other apps' volume during calls." Header="Echo cancellation">
+                <toolkit:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE7F6;" />
+                </toolkit:SettingsCard.HeaderIcon>
+                <ToggleSwitch IsOn="{x:Bind ViewModel.SystemVoiceProcessing, Mode=TwoWay}" />
+            </toolkit:SettingsCard>
+            <toolkit:SettingsCard Header="Input volume">
+                <toolkit:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE720;" />
+                </toolkit:SettingsCard.HeaderIcon>
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Slider
+                        Width="200"
+                        VerticalAlignment="Center"
+                        Maximum="200"
+                        Minimum="0"
+                        StepFrequency="5"
+                        Value="{x:Bind ViewModel.InputGainPercent, Mode=TwoWay}" />
+                    <TextBlock
+                        Width="44"
+                        VerticalAlignment="Center"
+                        Text="{x:Bind helpers:Ui.Percent(ViewModel.InputGainPercent), Mode=OneWay}" />
+                </StackPanel>
+            </toolkit:SettingsCard>
+            <toolkit:SettingsCard Header="Output volume">
+                <toolkit:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE767;" />
+                </toolkit:SettingsCard.HeaderIcon>
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Slider
+                        Width="200"
+                        VerticalAlignment="Center"
+                        Maximum="200"
+                        Minimum="0"
+                        StepFrequency="5"
+                        Value="{x:Bind ViewModel.OutputVolumePercent, Mode=TwoWay}" />
+                    <TextBlock
+                        Width="44"
+                        VerticalAlignment="Center"
+                        Text="{x:Bind helpers:Ui.Percent(ViewModel.OutputVolumePercent), Mode=OneWay}" />
+                </StackPanel>
+            </toolkit:SettingsCard>
+            <toolkit:SettingsCard Description="Hear yourself the way friends will, with noise suppression applied. Use headphones to avoid feedback." Header="Mic test">
+                <toolkit:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE9D9;" />
+                </toolkit:SettingsCard.HeaderIcon>
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <ProgressBar
+                        Width="160"
+                        VerticalAlignment="Center"
+                        Maximum="100"
+                        Value="{x:Bind ViewModel.MicLevel, Mode=OneWay}" />
+                    <Button
+                        MinWidth="120"
+                        Command="{x:Bind ViewModel.ToggleMicTestCommand}"
+                        Content="{x:Bind ViewModel.MicTestButtonText, Mode=OneWay}" />
+                </StackPanel>
+            </toolkit:SettingsCard>
+            <InfoBar
+                IsClosable="False"
+                IsOpen="{x:Bind helpers:Ui.IsNotEmpty(ViewModel.MicTestMessage), Mode=OneWay}"
+                Message="{x:Bind ViewModel.MicTestMessage, Mode=OneWay}"
+                Severity="Warning" />
+
+            <!--  Screen sharing  -->
+            <TextBlock Style="{StaticResource SettingsSectionHeaderStyle}" Text="Screen sharing" />
+            <toolkit:SettingsCard Description="On a LAN there's plenty of bandwidth, so Source sends your screen at full resolution." Header="Resolution">
+                <toolkit:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE7F4;" />
+                </toolkit:SettingsCard.HeaderIcon>
+                <ComboBox MinWidth="200" SelectedIndex="{x:Bind ViewModel.ResolutionIndex, Mode=TwoWay}">
+                    <x:String>Source (native)</x:String>
+                    <x:String>1440p</x:String>
+                    <x:String>1080p</x:String>
+                    <x:String>720p</x:String>
+                </ComboBox>
+            </toolkit:SettingsCard>
+            <toolkit:SettingsCard Header="Frame rate">
+                <toolkit:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE916;" />
+                </toolkit:SettingsCard.HeaderIcon>
+                <ComboBox MinWidth="200" SelectedIndex="{x:Bind ViewModel.FrameRateIndex, Mode=TwoWay}">
+                    <x:String>60 fps</x:String>
+                    <x:String>30 fps</x:String>
+                    <x:String>15 fps</x:String>
+                </ComboBox>
+            </toolkit:SettingsCard>
+            <toolkit:SettingsCard Description="Maximum keeps text pixel-sharp but uses more bandwidth; Balanced suits Wi-Fi." Header="Quality">
+                <toolkit:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE8B9;" />
+                </toolkit:SettingsCard.HeaderIcon>
+                <ComboBox MinWidth="200" SelectedIndex="{x:Bind ViewModel.QualityIndex, Mode=TwoWay}">
+                    <x:String>Maximum (wired LAN)</x:String>
+                    <x:String>Balanced (Wi-Fi)</x:String>
+                </ComboBox>
+            </toolkit:SettingsCard>
+
+            <!--  Appearance  -->
+            <TextBlock Style="{StaticResource SettingsSectionHeaderStyle}" Text="Appearance &amp; notifications" />
+            <toolkit:SettingsCard Header="Theme">
+                <toolkit:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE790;" />
+                </toolkit:SettingsCard.HeaderIcon>
+                <ComboBox MinWidth="200" SelectedIndex="{x:Bind ViewModel.ThemeIndex, Mode=TwoWay}">
+                    <x:String>Use system setting</x:String>
+                    <x:String>Light</x:String>
+                    <x:String>Dark</x:String>
+                </ComboBox>
+            </toolkit:SettingsCard>
+            <toolkit:SettingsCard Description="Show a Windows notification for messages and calls while Talky is in the background." Header="Notifications">
+                <toolkit:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xEA8F;" />
+                </toolkit:SettingsCard.HeaderIcon>
+                <ToggleSwitch IsOn="{x:Bind ViewModel.ShowNotifications, Mode=TwoWay}" />
+            </toolkit:SettingsCard>
+
+            <!--  About  -->
+            <TextBlock Style="{StaticResource SettingsSectionHeaderStyle}" Text="About" />
+            <toolkit:SettingsExpander Description="Peer-to-peer LAN chat, voice calls and screen sharing." Header="Talky">
+                <toolkit:SettingsExpander.HeaderIcon>
+                    <FontIcon Glyph="&#xE946;" />
+                </toolkit:SettingsExpander.HeaderIcon>
+                <TextBlock
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    IsTextSelectionEnabled="True"
+                    Text="{x:Bind ViewModel.Version}" />
+                <toolkit:SettingsExpander.Items>
+                    <toolkit:SettingsCard Description="Xiph.Org Foundation · BSD-3-Clause" Header="RNNoise (noise suppression)" />
+                    <toolkit:SettingsCard Description="Logan Stromberg et al. · BSD-3-Clause (C# port of Opus)" Header="Concentus / Opus (voice codec)" />
+                    <toolkit:SettingsCard Description="Microsoft · MIT" Header="Windows App SDK, WinUI, Windows Community Toolkit" />
+                </toolkit:SettingsExpander.Items>
+            </toolkit:SettingsExpander>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

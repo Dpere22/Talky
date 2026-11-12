@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Talky (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Talky (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

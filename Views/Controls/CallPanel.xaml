@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="Talky.Views.Controls.CallPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Talky.Views.Controls"
+    xmlns:helpers="using:Talky.Helpers">
+
+    <Grid
+        Padding="16,16,16,14"
+        Background="{ThemeResource CallStageBrush}"
+        CornerRadius="{StaticResource OverlayCornerRadius}"
+        RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!--  Stage: participants, or the remote screen when the peer is sharing  -->
+        <Grid MinHeight="150">
+            <StackPanel
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="56"
+                Visibility="{x:Bind helpers:Ui.Collapsed(Call.IsRemoteSharing), Mode=OneWay}">
+                <StackPanel Spacing="10">
+                    <controls:AvatarView
+                        HorizontalAlignment="Center"
+                        BadgeGlyph="{x:Bind helpers:Ui.MuteBadge(Call.IsMuted, Call.IsDeafened), Mode=OneWay}"
+                        DisplayName="{x:Bind Me.DisplayName, Mode=OneWay}"
+                        IsSpeaking="{x:Bind Call.IsLocalSpeaking, Mode=OneWay}"
+                        Size="88" />
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        Foreground="{ThemeResource CallStageForegroundBrush}"
+                        Style="{StaticResource BodyStrongTextBlockStyle}"
+                        Text="{x:Bind Me.DisplayName, Mode=OneWay}" />
+                </StackPanel>
+                <StackPanel Opacity="{x:Bind helpers:Ui.RingingOpacity(Call.IsActive), Mode=OneWay}" Spacing="10">
+                    <controls:AvatarView
+                        HorizontalAlignment="Center"
+                        BadgeGlyph="{x:Bind helpers:Ui.MuteBadge(Call.RemoteMuted, Call.RemoteDeafened), Mode=OneWay}"
+                        DisplayName="{x:Bind Friend.DisplayName, Mode=OneWay}"
+                        IsSpeaking="{x:Bind Call.IsRemoteSpeaking, Mode=OneWay}"
+                        Size="88" />
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        Foreground="{ThemeResource CallStageForegroundBrush}"
+                        Style="{StaticResource BodyStrongTextBlockStyle}"
+                        Text="{x:Bind Friend.DisplayName, Mode=OneWay}" />
+                </StackPanel>
+            </StackPanel>
+
+            <Grid Visibility="{x:Bind Call.IsRemoteSharing, Mode=OneWay}">
+                <controls:RemoteScreenView Source="{x:Bind Call.RemoteScreen, Mode=OneWay}" />
+
+                <!--  Participants strip, bottom-left  -->
+                <StackPanel
+                    Margin="8"
+                    Padding="8,6"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Bottom"
+                    Background="{ThemeResource AcrylicInAppFillColorDefaultBrush}"
+                    CornerRadius="20"
+                    Orientation="Horizontal"
+                    Spacing="10">
+                    <controls:AvatarView
+                        BadgeGlyph="{x:Bind helpers:Ui.MuteBadge(Call.IsMuted, Call.IsDeafened), Mode=OneWay}"
+                        DisplayName="{x:Bind Me.DisplayName, Mode=OneWay}"
+                        IsSpeaking="{x:Bind Call.IsLocalSpeaking, Mode=OneWay}"
+                        Size="28" />
+                    <controls:AvatarView
+                        BadgeGlyph="{x:Bind helpers:Ui.MuteBadge(Call.RemoteMuted, Call.RemoteDeafened), Mode=OneWay}"
+                        DisplayName="{x:Bind Friend.DisplayName, Mode=OneWay}"
+                        IsSpeaking="{x:Bind Call.IsRemoteSpeaking, Mode=OneWay}"
+                        Size="28" />
+                </StackPanel>
+
+                <Button
+                    Margin="8"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Top"
+                    AutomationProperties.Name="Full screen"
+                    Command="{x:Bind Call.EnterTheaterCommand, Mode=OneWay}"
+                    Style="{StaticResource IconButtonStyle}"
+                    Background="{ThemeResource AcrylicInAppFillColorDefaultBrush}"
+                    ToolTipService.ToolTip="Full screen">
+                    <FontIcon FontSize="16" Glyph="&#xE740;" />
+                </Button>
+            </Grid>
+        </Grid>
+
+        <!--  Status  -->
+        <StackPanel Grid.Row="1" HorizontalAlignment="Center" Spacing="2">
+            <TextBlock
+                HorizontalAlignment="Center"
+                Foreground="{ThemeResource CallStageForegroundBrush}"
+                Style="{StaticResource BodyStrongTextBlockStyle}"
+                Text="{x:Bind Call.StatusText, Mode=OneWay}" />
+            <TextBlock
+                HorizontalAlignment="Center"
+                Foreground="{ThemeResource SystemFillColorSuccessBrush}"
+                Style="{StaticResource CaptionTextBlockStyle}"
+                Text="{x:Bind helpers:Ui.SharingText(Call.SharingSourceName), Mode=OneWay}"
+                Visibility="{x:Bind Call.IsSharing, Mode=OneWay}" />
+            <InfoBar
+                Margin="0,6,0,0"
+                IsClosable="False"
+                IsOpen="{x:Bind Call.HasMediaWarning, Mode=OneWay}"
+                Message="{x:Bind Call.MediaWarning, Mode=OneWay}"
+                Severity="Warning" />
+        </StackPanel>
+
+        <!--  Controls: incoming call  -->
+        <StackPanel
+            Grid.Row="2"
+            HorizontalAlignment="Center"
+            Orientation="Horizontal"
+            Spacing="16"
+            Visibility="{x:Bind Call.IsIncomingRinging, Mode=OneWay}">
+            <controls:TintedButton
+                AutomationProperties.Name="Decline"
+                Command="{x:Bind Call.DeclineCommand, Mode=OneWay}"
+                Style="{StaticResource CallActionButtonStyle}"
+                Tint="Danger"
+                ToolTipService.ToolTip="Decline">
+                <FontIcon FontSize="18" Glyph="&#xE778;" />
+            </controls:TintedButton>
+            <controls:TintedButton
+                AutomationProperties.Name="Accept"
+                Command="{x:Bind Call.AcceptCommand, Mode=OneWay}"
+                Style="{StaticResource CallActionButtonStyle}"
+                Tint="Success"
+                ToolTipService.ToolTip="Accept">
+                <FontIcon FontSize="18" Glyph="&#xE717;" />
+            </controls:TintedButton>
+        </StackPanel>
+
+        <!--  Controls: outgoing / active call  -->
+        <StackPanel
+            Grid.Row="2"
+            HorizontalAlignment="Center"
+            Orientation="Horizontal"
+            Spacing="10"
+            Visibility="{x:Bind helpers:Ui.Collapsed(Call.IsIncomingRinging), Mode=OneWay}">
+            <ToggleButton
+                AutomationProperties.Name="Mute"
+                IsChecked="{x:Bind Call.IsMuted, Mode=TwoWay}"
+                Style="{StaticResource CallControlToggleStyle}"
+                ToolTipService.ToolTip="{x:Bind helpers:Ui.MuteToolTip(Call.IsMuted), Mode=OneWay}">
+                <controls:SlashedGlyph Glyph="&#xE720;" IsSlashed="{x:Bind Call.IsMuted, Mode=OneWay}" />
+            </ToggleButton>
+            <ToggleButton
+                AutomationProperties.Name="Deafen"
+                IsChecked="{x:Bind Call.IsDeafened, Mode=TwoWay}"
+                Style="{StaticResource CallControlToggleStyle}"
+                ToolTipService.ToolTip="{x:Bind helpers:Ui.DeafenToolTip(Call.IsDeafened), Mode=OneWay}">
+                <controls:SlashedGlyph Glyph="&#xE7F6;" IsSlashed="{x:Bind Call.IsDeafened, Mode=OneWay}" />
+            </ToggleButton>
+            <ToggleButton
+                AutomationProperties.Name="Noise suppression"
+                IsChecked="{x:Bind Call.NoiseSuppressionEnabled, Mode=TwoWay}"
+                IsEnabled="{x:Bind Call.NoiseSuppressionAvailable, Mode=OneWay}"
+                Style="{StaticResource CallControlToggleStyle}"
+                ToolTipService.ToolTip="{x:Bind helpers:Ui.NoiseToolTip(Call.NoiseSuppressionEnabled, Call.NoiseSuppressionAvailable), Mode=OneWay}">
+                <PathIcon
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Data="M1,8 h2 v4 h-2 z M5,5 h2 v10 h-2 z M9,1 h2 v18 h-2 z M13,4 h2 v12 h-2 z M17,7 h2 v6 h-2 z" />
+            </ToggleButton>
+            <ToggleButton
+                AutomationProperties.Name="Share screen"
+                Command="{x:Bind Call.ToggleScreenShareCommand, Mode=OneWay}"
+                IsChecked="{x:Bind Call.IsSharing, Mode=OneWay}"
+                IsEnabled="{x:Bind Call.IsActive, Mode=OneWay}"
+                Style="{StaticResource CallControlToggleStyle}"
+                ToolTipService.ToolTip="{x:Bind helpers:Ui.ShareToolTip(Call.IsSharing), Mode=OneWay}">
+                <FontIcon FontSize="16" Glyph="&#xE7F4;" />
+            </ToggleButton>
+            <Button
+                AutomationProperties.Name="Volume"
+                Style="{StaticResource CallControlButtonStyle}"
+                ToolTipService.ToolTip="Volume">
+                <FontIcon FontSize="16" Glyph="&#xE767;" />
+                <Button.Flyout>
+                    <Flyout Placement="Top">
+                        <StackPanel Width="240" Spacing="4">
+                            <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Call volume" />
+                            <Slider
+                                Maximum="200"
+                                Minimum="0"
+                                StepFrequency="5"
+                                Value="{x:Bind Call.VolumePercent, Mode=TwoWay}" />
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+            <controls:TintedButton
+                AutomationProperties.Name="Hang up"
+                Command="{x:Bind Call.HangUpCommand, Mode=OneWay}"
+                Style="{StaticResource CallActionButtonStyle}"
+                Tint="Danger"
+                ToolTipService.ToolTip="Hang up">
+                <FontIcon FontSize="18" Glyph="&#xE778;" />
+            </controls:TintedButton>
+        </StackPanel>
+    </Grid>
+</UserControl>

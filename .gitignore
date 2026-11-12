@@ -1,0 +1,12 @@
+bin/
+obj/
+.vs/
+*.user
+AppPackages/
+BundleArtifacts/
+*.msix
+*.msixbundle
+*.appx
+# Signing certificates (private keys)
+*.pfx
+*.cer

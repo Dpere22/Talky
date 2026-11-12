@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="Talky.Views.Controls.AvatarView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    IsTabStop="False">
+
+    <Grid x:Name="Root">
+        <!-- Speaking ring sits just outside the circle. -->
+        <Ellipse
+            x:Name="SpeakingRing"
+            Margin="-4"
+            Stroke="{ThemeResource SystemFillColorSuccessBrush}"
+            StrokeThickness="3"
+            Visibility="Collapsed" />
+        <Ellipse x:Name="Circle" />
+        <TextBlock
+            x:Name="InitialsText"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            FontWeight="SemiBold"
+            Foreground="White"
+            IsTextScaleFactorEnabled="False" />
+
+        <!-- Presence dot, bottom-right, with a cut-out ring in the surface colour. -->
+        <Ellipse
+            x:Name="PresenceDot"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Bottom"
+            Stroke="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+            StrokeThickness="2.5"
+            Visibility="Collapsed" />
+
+        <!-- Small badge (e.g. muted mic) top-right. -->
+        <Border
+            x:Name="BadgeBorder"
+            Width="20"
+            Height="20"
+            Margin="0,-2,-2,0"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Top"
+            Background="{ThemeResource SystemFillColorCriticalBrush}"
+            CornerRadius="10"
+            Visibility="Collapsed">
+            <FontIcon x:Name="BadgeIcon" FontSize="11" Foreground="White" />
+        </Border>
+    </Grid>
+</UserControl>
