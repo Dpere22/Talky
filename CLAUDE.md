@@ -5,10 +5,13 @@ chat), and high-resolution screen sharing. No servers or accounts — a friend i
 with a nickname. Group chats are intentionally out of scope for now.
 
 ## Stack
+- **Windows 11 24H2 (build 26100) or later, x64 and ARM64 only** — no Windows 10, no x86. The floor is set in three
+  places that must agree: `TargetPlatformMinVersion` (csproj), `MinVersion` (manifest), `App.MinimumWindowsBuild`
+  (startup check, because the unpackaged portable build ignores the manifest). Use 26100 APIs directly, no `ApiInformation` checks.
 - WinUI 3 / Windows App SDK 2.6, .NET 10, single-project MSIX (`EnableMsixTooling`), C# 14.
 - MVVM with CommunityToolkit.Mvvm (**partial properties**, `[RelayCommand]`), Microsoft.Extensions.DependencyInjection.
 - CommunityToolkit.WinUI.Controls.SettingsControls (SettingsCard/SettingsExpander) for the settings page.
-- Concentus (managed Opus), RNNoise native `rnnoise.dll` from `YellowDogMan.RRNoise.NET` (`IncludeAssets="native"`; x64/x86 only — ARM64 reports noise suppression unavailable).
+- Concentus (managed Opus), RNNoise native `rnnoise.dll` from `YellowDogMan.RRNoise.NET` (`IncludeAssets="native"`; x64 only — ARM64 reports noise suppression unavailable).
 - Package versions are pinned in `Talky.csproj` (the template used floating `*`).
 
 ## Layout
@@ -51,13 +54,13 @@ with a nickname. Group chats are intentionally out of scope for now.
 - `XamlRoot` is null in the `Window` constructor; use `GetDpiForWindow` for initial sizing.
 
 ## Build / run / test
-- Build: `dotnet build -p:Platform=x64` (also x86/ARM64). Run packaged with F5 in VS or `dotnet run -p:Platform=x64` (WinApp tooling registers a debug identity).
+- Build: `dotnet build -p:Platform=x64` (also ARM64). Run packaged with F5 in VS or `dotnet run -p:Platform=x64` (WinApp tooling registers a debug identity).
 - Two instances on one PC: pass `--profile <name>` (or `TALKY_PROFILE`) for separate data, give each a different port in Settings (or pre-seed `profiles/<name>/settings.json`), and add each other as `127.0.0.1:<port>`.
   An unpackaged self-contained build works well for this: `dotnet build -p:Platform=x64 -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true -p:EnableWinAppRunSupport=false` (do it in a copy of the repo to keep `obj/` clean). Unpackaged runs register a toast AUMID under `HKCU\Software\Classes\AppUserModelId`.
 - Windows Firewall prompts the first time Talky listens; friends can't reach you until it's allowed on private networks.
 
 ## Distribution
-- **Unsigned, for friends (current choice): `.\build-portable.ps1 [-Arch x64|arm64|x86]`** → `AppPackages\Talky_<ver>_<arch>_portable.zip`. Unpackaged (`WindowsPackageType=None`), self-contained .NET + Windows App Runtime, trimmed Release; builds into `bin\portable` / `obj\portable` so it never mixes with MSIX/F5 state. Friends extract and run `Talky.exe`; data in `%LOCALAPPDATA%\Talky`.
+- **Unsigned, for friends (current choice): `.\build-portable.ps1 [-Arch x64|arm64]`** → `AppPackages\Talky_<ver>_<arch>_portable.zip`. Unpackaged (`WindowsPackageType=None`), self-contained .NET + Windows App Runtime, trimmed Release; builds into `bin\portable` / `obj\portable` so it never mixes with MSIX/F5 state. Friends extract and run `Talky.exe`; data in `%LOCALAPPDATA%\Talky`.
 - **Unsigned MSIX does not work for this app**: `Add-AppxPackage -AllowUnsigned` (publisher with `OID.2.25.311729368913984317654407730594956997722=1`) rejects any package with an app executable — `0x80073D2B "an unsigned package cannot include Executable activations"` (verified, even without the COM server extension). Don't retry this route.
 - **Signed MSIX (future): `.\build-msix.ps1 -CertPath .\devcert.pfx -CertPassword <pw> [-Arch x64,arm64]`**, which wraps the `winapp.exe` bundled in the `Microsoft.Windows.SDK.BuildTools.WinApp` NuGet package (`winapp package … --self-contained`, i.e. `dotnet publish`: trimmed + ReadyToRun, ~63 MB with the runtime bundled).
   - Test cert once: `winapp cert generate --manifest .\Package.appxmanifest --password <pw> --export-cer` (subject must equal manifest `Publisher`, currently `CN=dpuu2`). Installing PCs trust the `.cer` once: `Import-Certificate -FilePath devcert.cer -CertStoreLocation Cert:\LocalMachine\TrustedPeople` (admin).

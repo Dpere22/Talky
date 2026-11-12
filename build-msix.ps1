@@ -23,7 +23,7 @@
     .\build-msix.ps1 -CertPath .\devcert.pfx -CertPassword 'your-password'
 #>
 param(
-    [ValidateSet('x64', 'arm64', 'x86')]
+    [ValidateSet('x64', 'arm64')]
     [string[]] $Arch = @('x64'),
 
     # Optional .pfx to sign with. Its subject must equal the Publisher in Package.appxmanifest.

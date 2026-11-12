@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.Windows.AppLifecycle;
@@ -34,7 +35,15 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
-        Services = ConfigureServices(Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread());
+        if (!OperatingSystem.IsWindowsVersionAtLeast(10, 0, MinimumWindowsBuild))
+        {
+            // The MSIX manifest blocks older Windows at install time; the portable build has to check itself.
+            _ = MessageBox(0, "Talky needs Windows 11, version 24H2 or later.", "Talky", MB_ICONERROR);
+            Exit();
+            return;
+        }
+
+        Services =ConfigureServices(Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread());
 
         GetService<ISettingsService>().Load();
         GetService<IFriendService>().Load();
@@ -121,4 +130,12 @@ public partial class App : Application
         GetService<IMessageStore>().Flush();
         (GetService<ISoundEffects>() as IDisposable)?.Dispose();
     }
+
+    /// <summary>Windows 11 24H2. Keep in sync with TargetPlatformMinVersion and the manifest MinVersion.</summary>
+    private const int MinimumWindowsBuild = 26100;
+
+    private const uint MB_ICONERROR = 0x10;
+
+    [LibraryImport("user32.dll", EntryPoint = "MessageBoxW", StringMarshalling = StringMarshalling.Utf16)]
+    private static partial int MessageBox(nint owner, string text, string caption, uint type);
 }

@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using Talky.Interop;
-using Windows.Foundation.Metadata;
 using Windows.Graphics;
 using Windows.Graphics.Capture;
 using Windows.Graphics.DirectX;
@@ -37,11 +36,7 @@ internal sealed class ScreenCaptureSession : IDisposable
         _framePool.FrameArrived += OnFrameArrived;
         _session = _framePool.CreateCaptureSession(item);
 
-        if (ApiInformation.IsPropertyPresent(typeof(GraphicsCaptureSession).FullName, nameof(GraphicsCaptureSession.IsCursorCaptureEnabled)))
-        {
-            _session.IsCursorCaptureEnabled = true;
-        }
-
+        _session.IsCursorCaptureEnabled = true;
         item.Closed += (_, _) => Closed?.Invoke(this, EventArgs.Empty);
         _session.StartCapture();
     }

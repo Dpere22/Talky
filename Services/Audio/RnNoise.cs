@@ -6,7 +6,7 @@ namespace Talky.Services.Audio;
 
 /// <summary>
 /// P/Invoke bindings for Xiph's RNNoise (BSD-3-Clause), a small recurrent-network noise suppressor.
-/// The native rnnoise.dll ships in the YellowDogMan.RRNoise.NET package (x64/x86).
+/// The native rnnoise.dll ships in the YellowDogMan.RRNoise.NET package (x64 only among Talky's targets).
 /// </summary>
 internal static partial class RnNoiseNative
 {

@@ -12,6 +12,8 @@ experience that is completely Windows-native and needs no servers, accounts or i
 
 ## Getting started
 
+Talky runs on **Windows 11, version 24H2 or later** (x64 or ARM64; noise suppression is x64 only).
+
 1. Open `Talky.slnx` in Visual Studio (Windows App SDK workload) and run, or `dotnet build -p:Platform=x64`.
 2. On first launch Windows Firewall asks whether Talky may communicate — allow **private networks**.
 3. Your address (e.g. `192.168.1.20`) is shown on the welcome screen and in the sidebar — click it to copy.

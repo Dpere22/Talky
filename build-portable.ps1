@@ -19,7 +19,7 @@
     .\build-portable.ps1 -Arch arm64
 #>
 param(
-    [ValidateSet('x64', 'arm64', 'x86')]
+    [ValidateSet('x64', 'arm64')]
     [string] $Arch = 'x64'
 )
 

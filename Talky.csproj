@@ -2,11 +2,13 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
-    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <!-- Windows 11 24H2 (build 26100) or later only; keep in sync with MinVersion in Package.appxmanifest
+         and the startup check in App.xaml.cs (unpackaged builds don't enforce the manifest). -->
+    <TargetPlatformMinVersion>10.0.26100.0</TargetPlatformMinVersion>
     <RootNamespace>Talky</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon Condition="Exists('Assets\AppIcon.ico')">Assets\AppIcon.ico</ApplicationIcon>
-    <Platforms>x86;x64;ARM64</Platforms>
+    <Platforms>x64;ARM64</Platforms>
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-$([System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture.ToString().ToLowerInvariant())</RuntimeIdentifier>
     <PublishProfile Condition="Exists('Properties\PublishProfiles\win-$(Platform).pubxml')">win-$(Platform).pubxml</PublishProfile>
     <UseWinUI>true</UseWinUI>
@@ -66,7 +68,7 @@
     <!-- Opus voice codec, fully managed (BSD-3). -->
     <PackageReference Include="Concentus" Version="2.2.2" />
     <!--
-      Native RNNoise (Xiph, BSD-3) binaries for win-x64 / win-x86. We only consume the native
+      Native RNNoise (Xiph, BSD-3) binary for win-x64. We only consume the native
       rnnoise.dll and P/Invoke it ourselves (Services/Audio/RnNoise.cs), so the managed wrapper
       is excluded. On ARM64 there is no binary: noise suppression reports itself unavailable.
     -->
