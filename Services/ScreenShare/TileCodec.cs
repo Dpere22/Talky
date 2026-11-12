@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Talky.Models;
 using Windows.Foundation;
+using Windows.Graphics;
 using Windows.Graphics.Imaging;
 using Windows.Storage.Streams;
 
@@ -13,6 +14,7 @@ namespace Talky.Services.ScreenShare;
 /// <summary>
 /// LAN-optimised screen codec. Frames are split into a 128 px grid; only tiles that changed since the
 /// previous frame are sent, merged into horizontal strips and JPEG-encoded in parallel with WIC.
+/// When the caller knows which areas were redrawn (capture dirty regions), only tiles touching them are compared.
 /// When most of the screen is moving (video, games) strips use a lighter "motion" quality, and once
 /// those tiles settle they are re-sent at full quality, so static text ends up sharp.
 ///
@@ -46,9 +48,11 @@ public sealed class TileFrameEncoder
 
     /// <summary>
     /// Encodes the changes in <paramref name="frame"/> (tightly packed BGRA, stride = width * 4).
+    /// <paramref name="changedRegions"/> are the areas that may differ from the previous frame passed to this
+    /// method (null = unknown); tiles outside them are assumed unchanged and not compared.
     /// Returns false when nothing needs sending.
     /// </summary>
-    public async Task<bool> EncodeAsync(byte[] frame, int width, int height, ArrayBufferWriter<byte> output)
+    public async Task<bool> EncodeAsync(byte[] frame, int width, int height, IReadOnlyList<RectInt32>? changedRegions, ArrayBufferWriter<byte> output)
     {
         output.ResetWrittenCount();
         bool full = _previous is null || width != _width || height != _height;
@@ -65,9 +69,15 @@ public sealed class TileFrameEncoder
         {
             Array.Fill(changed, true);
         }
-        else
+        else if (changedRegions is null)
         {
             Parallel.For(0, total, i => changed[i] = !TileEquals(frame, previous, i));
+        }
+        else
+        {
+            // Still compared exactly: a redrawn area often ends up with the same pixels.
+            var candidates = TilesTouching(changedRegions);
+            Parallel.For(0, candidates.Count, k => changed[candidates[k]] = !TileEquals(frame, previous, candidates[k]));
         }
 
         int changedCount = changed.Count(c => c);
@@ -125,7 +135,21 @@ public sealed class TileFrameEncoder
             }
         }
 
-        System.Buffer.BlockCopy(frame, 0, previous, 0, width * height * 4);
+        if (full)
+        {
+            System.Buffer.BlockCopy(frame, 0, previous, 0, width * height * 4);
+        }
+        else
+        {
+            // Unchanged tiles are already identical.
+            for (int i = 0; i < total; i++)
+            {
+                if (changed[i])
+                {
+                    CopyTile(frame, previous, i);
+                }
+            }
+        }
 
         if (rects.Count == 0)
         {
@@ -161,11 +185,15 @@ public sealed class TileFrameEncoder
         _previous = new byte[width * height * 4];
     }
 
+    private (int X, int Y, int W, int H) TileBounds(int index)
+    {
+        int x = index % _tilesX * TileSize, y = index / _tilesX * TileSize;
+        return (x, y, Math.Min(TileSize, _width - x), Math.Min(TileSize, _height - y));
+    }
+
     private bool TileEquals(byte[] current, byte[] previous, int index)
     {
-        int tx = index % _tilesX, ty = index / _tilesX;
-        int x = tx * TileSize, y = ty * TileSize;
-        int w = Math.Min(TileSize, _width - x), h = Math.Min(TileSize, _height - y);
+        var (x, y, w, h) = TileBounds(index);
         int stride = _width * 4;
         for (int row = 0; row < h; row++)
         {
@@ -177,6 +205,48 @@ public sealed class TileFrameEncoder
         }
 
         return true;
+    }
+
+    private void CopyTile(byte[] source, byte[] destination, int index)
+    {
+        var (x, y, w, h) = TileBounds(index);
+        int stride = _width * 4;
+        for (int row = 0; row < h; row++)
+        {
+            int offset = (y + row) * stride + x * 4;
+            System.Buffer.BlockCopy(source, offset, destination, offset, w * 4);
+        }
+    }
+
+    /// <summary>Indices of the tiles intersecting <paramref name="regions"/>, each once.</summary>
+    private List<int> TilesTouching(IReadOnlyList<RectInt32> regions)
+    {
+        var marked = new bool[_tilesX * _tilesY];
+        var result = new List<int>();
+        foreach (var r in regions)
+        {
+            int x0 = Math.Max(0, r.X), y0 = Math.Max(0, r.Y);
+            int x1 = Math.Min(_width, r.X + r.Width), y1 = Math.Min(_height, r.Y + r.Height);
+            if (x1 <= x0 || y1 <= y0)
+            {
+                continue;
+            }
+
+            for (int ty = y0 / TileSize; ty <= (y1 - 1) / TileSize; ty++)
+            {
+                for (int tx = x0 / TileSize; tx <= (x1 - 1) / TileSize; tx++)
+                {
+                    int i = ty * _tilesX + tx;
+                    if (!marked[i])
+                    {
+                        marked[i] = true;
+                        result.Add(i);
+                    }
+                }
+            }
+        }
+
+        return result;
     }
 
     private async Task<byte[]> EncodeRectAsync(byte[] frame, int frameWidth, int x, int y, int w, int h, bool high)

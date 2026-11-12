@@ -214,31 +214,40 @@ public sealed class ScreenShareService : IScreenShareService, IRemoteScreen, IPa
             _ => (0, 0),
         };
 
-        int frameRate = Math.Clamp(settings.ShareFrameRate, 5, 240);
-        // Capture is already paced by the display; only throttle explicitly for low frame-rate caps
-        // (Task.Delay's ~15 ms granularity would otherwise eat into 60 fps).
-        TimeSpan? minInterval = frameRate < 60 ? TimeSpan.FromSeconds(1.0 / frameRate) : null;
+        // Paced at the source: Windows doesn't capture faster than this.
+        capture.SetMaxFrameRate(Math.Clamp(settings.ShareFrameRate, 5, 240));
 
         var encoder = new TileFrameEncoder { Quality = settings.ShareQuality };
         var output = new ArrayBufferWriter<byte>(1 << 20);
         (int Width, int Height) announced = default;
         CapturedFrame? last = null;
+        bool quietChecked = true;
 
         try
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                long started = Stopwatch.GetTimestamp();
                 var frame = await capture.NextFrameAsync(maxWidth, maxHeight, TimeSpan.FromMilliseconds(200), cancellationToken).ConfigureAwait(false);
+                if (frame is not null)
+                {
+                    quietChecked = false;
+                }
+                else if (!quietChecked)
+                {
+                    // The screen just went quiet: re-check the whole last frame once, since Windows' change
+                    // reports can lag a frame behind.
+                    quietChecked = true;
+                    frame = capture.RefreshLastFrame();
+                }
+                else if (last is not null && encoder.HasPendingRefinement)
+                {
+                    // Still quiet: give motion-quality tiles a chance to refine.
+                    frame = last.Value with { Changed = [] };
+                }
+
                 if (frame is null)
                 {
-                    // Nothing new on screen: give motion-quality tiles a chance to refine.
-                    if (last is null || !encoder.HasPendingRefinement)
-                    {
-                        continue;
-                    }
-
-                    frame = last;
+                    continue;
                 }
 
                 last = frame;
@@ -249,22 +258,13 @@ public sealed class ScreenShareService : IScreenShareService, IRemoteScreen, IPa
                     _network.Send(call.FriendId, PacketType.ScreenStart, new ScreenStartPayload(call.CallId, current.Width, current.Height, capture.DisplayName));
                 }
 
-                if (await encoder.EncodeAsync(current.Pixels, current.Width, current.Height, output).ConfigureAwait(false)
+                if (await encoder.EncodeAsync(current.Pixels, current.Width, current.Height, current.Changed, output).ConfigureAwait(false)
                     && MemoryMarshal.TryGetArray(output.WrittenMemory, out var segment))
                 {
                     // Awaiting the write gives natural back-pressure: we never queue more than one frame.
                     if (!await _network.SendBulkAsync(call.FriendId, PacketType.ScreenFrame, segment.Array!, segment.Count).ConfigureAwait(false))
                     {
                         break;
-                    }
-                }
-
-                if (minInterval is { } interval)
-                {
-                    var remaining = interval - Stopwatch.GetElapsedTime(started);
-                    if (remaining > TimeSpan.FromMilliseconds(2))
-                    {
-                        await Task.Delay(remaining, cancellationToken).ConfigureAwait(false);
                     }
                 }
             }

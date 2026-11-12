@@ -38,6 +38,7 @@ with a nickname. Group chats are intentionally out of scope for now.
 - Writer has two queues: control packets always jump ahead of bulk screen frames. Packet handlers run inline on the read loop (payload memory is pooled and only valid during the call) — this is also the back-pressure for screen sharing.
 - Voice UDP: `'T' 0x01 | token u32 (from CallId) | seq u32 | flags | opus`. 20 ms frames, 96 kbps, in-band FEC; 60 ms jitter target.
 - Screen frames: 128 px change grid, horizontal runs merged into strips, parallel WIC JPEG (4:4:4 at "Maximum"), motion frames at lower quality then refined once static. Sender awaits each write (never more than one frame in flight).
+- Capture uses `DirtyRegionMode.ReportOnly` (dirty rects accumulated across dropped frames → `CapturedFrame.Changed`): only tiles touching them are compared and only those areas rescaled. Reports can lag one frame (GDI windows), so the encoder only trusts its own previous-frame copy, and a full pass runs every 2 s and once when the screen goes quiet (`RefreshLastFrame`). `MinUpdateInterval` (1/fps − 1.5 ms; exactly 1/fps undershoots) paces capture at the source. None of this changes the wire format.
 
 ## Conventions
 - Services never touch XAML; view models marshal service events with `IUiDispatcher.Post`.
