@@ -19,7 +19,7 @@
     <!-- Needed for the audio/video interop hot paths (IMemoryBufferByteAccess, D3D11 device creation, RNNoise). -->
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <!-- Keep in sync with Identity Version in Package.appxmanifest. -->
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <!-- Program.cs owns Main so Velopack's install/update hooks run before WinUI starts. -->
     <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
   </PropertyGroup>
