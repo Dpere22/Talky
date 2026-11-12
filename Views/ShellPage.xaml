@@ -262,13 +262,27 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <InfoBar
-                Margin="16,12,16,0"
-                IsClosable="True"
-                IsOpen="{x:Bind ViewModel.HasNetworkError, Mode=OneWay}"
-                Message="{x:Bind ViewModel.NetworkError, Mode=OneWay}"
-                Severity="Error"
-                Title="Friends can't reach you" />
+            <StackPanel>
+                <InfoBar
+                    Margin="16,12,16,0"
+                    IsClosable="True"
+                    IsOpen="{x:Bind ViewModel.HasNetworkError, Mode=OneWay}"
+                    Message="{x:Bind ViewModel.NetworkError, Mode=OneWay}"
+                    Severity="Error"
+                    Title="Friends can't reach you" />
+                <!--  Hidden during calls: restarting would hang up.  -->
+                <InfoBar
+                    Margin="16,12,16,0"
+                    IsClosable="True"
+                    IsOpen="{x:Bind helpers:Ui.AndNot(ViewModel.Updates.IsUpdateReady, ViewModel.Call.IsInCall), Mode=OneWay}"
+                    Message="{x:Bind ViewModel.Updates.ReadyMessage, Mode=OneWay}"
+                    Severity="Informational"
+                    Title="Update ready">
+                    <InfoBar.ActionButton>
+                        <Button Command="{x:Bind ViewModel.Updates.RestartToUpdateCommand}" Content="Restart now" />
+                    </InfoBar.ActionButton>
+                </InfoBar>
+            </StackPanel>
             <Frame x:Name="ContentFrame" Grid.Row="1" />
         </Grid>
 

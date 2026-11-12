@@ -1,0 +1,38 @@
+# Builds the Velopack installers/update packages for x64 and ARM64 and publishes them as a GitHub release.
+# Release: bump <Version> in Talky.csproj (and Identity Version in Package.appxmanifest), commit, push, then
+#   git tag v1.2.3 && git push origin v1.2.3
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write   # create the release and upload its assets
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Check the tag matches the project version
+        shell: pwsh
+        run: |
+          [xml] $csproj = Get-Content Talky.csproj
+          $version = ($csproj.Project.PropertyGroup | Where-Object { $_.Version } | Select-Object -First 1).Version
+          if ("v$version" -ne '${{ github.ref_name }}') {
+            throw "Tag ${{ github.ref_name }} doesn't match <Version>$version</Version> in Talky.csproj"
+          }
+
+      - name: Build and publish
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $notes = if (Test-Path "release-notes/${{ github.ref_name }}.md") { "release-notes/${{ github.ref_name }}.md" } else { $null }
+          ./build-release.ps1 -Arch x64, arm64 -Publish -ReleaseNotes $notes

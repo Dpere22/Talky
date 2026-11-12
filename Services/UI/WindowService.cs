@@ -25,6 +25,9 @@ public interface IWindowService
     void SetFullScreen(bool fullScreen);
 
     void ApplyTheme(AppTheme theme);
+
+    /// <summary>Closes the main window, which runs the normal shutdown and exits the app.</summary>
+    void Close();
 }
 
 public sealed partial class WindowService : IWindowService
@@ -50,6 +53,8 @@ public sealed partial class WindowService : IWindowService
             ActivationChanged?.Invoke(this, EventArgs.Empty);
         };
     }
+
+    public void Close() => _window?.Close();
 
     public void BringToFront()
     {

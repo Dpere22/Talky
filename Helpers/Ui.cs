@@ -15,6 +15,8 @@ public static class Ui
 
     public static bool Not(bool value) => !value;
 
+    public static bool AndNot(bool a, bool b) => a && !b;
+
     public static bool IsNotEmpty(string? value) => !string.IsNullOrEmpty(value);
 
     /// <summary>Badge on a call avatar: muted mic or deafened speaker.</summary>

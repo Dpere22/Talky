@@ -211,6 +211,26 @@
 
             <!--  About  -->
             <TextBlock Style="{StaticResource SettingsSectionHeaderStyle}" Text="About" />
+            <toolkit:SettingsCard Description="{x:Bind ViewModel.Updates.StatusText, Mode=OneWay}" Header="Updates">
+                <toolkit:SettingsCard.HeaderIcon>
+                    <FontIcon Glyph="&#xE895;" />
+                </toolkit:SettingsCard.HeaderIcon>
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <ProgressRing
+                        Width="20"
+                        Height="20"
+                        IsActive="{x:Bind ViewModel.Updates.IsBusy, Mode=OneWay}" />
+                    <Button
+                        Command="{x:Bind ViewModel.Updates.RestartToUpdateCommand}"
+                        Content="Restart now"
+                        Style="{StaticResource AccentButtonStyle}"
+                        Visibility="{x:Bind ViewModel.Updates.IsUpdateReady, Mode=OneWay}" />
+                    <Button
+                        Command="{x:Bind ViewModel.Updates.CheckCommand}"
+                        Content="Check for updates"
+                        Visibility="{x:Bind helpers:Ui.Collapsed(ViewModel.Updates.IsUpdateReady), Mode=OneWay}" />
+                </StackPanel>
+            </toolkit:SettingsCard>
             <toolkit:SettingsExpander Description="Peer-to-peer LAN chat, voice calls and screen sharing." Header="Talky">
                 <toolkit:SettingsExpander.HeaderIcon>
                     <FontIcon Glyph="&#xE946;" />
@@ -223,6 +243,7 @@
                     <toolkit:SettingsCard Description="Xiph.Org Foundation · BSD-3-Clause" Header="RNNoise (noise suppression)" />
                     <toolkit:SettingsCard Description="Logan Stromberg et al. · BSD-3-Clause (C# port of Opus)" Header="Concentus / Opus (voice codec)" />
                     <toolkit:SettingsCard Description="Microsoft · MIT" Header="Windows App SDK, WinUI, Windows Community Toolkit" />
+                    <toolkit:SettingsCard Description="Velopack · MIT" Header="Velopack (installer and updates)" />
                 </toolkit:SettingsExpander.Items>
             </toolkit:SettingsExpander>
         </StackPanel>

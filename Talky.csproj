@@ -20,6 +20,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <!-- Keep in sync with Identity Version in Package.appxmanifest. -->
     <Version>1.0.0</Version>
+    <!-- Program.cs owns Main so Velopack's install/update hooks run before WinUI starts. -->
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -60,8 +62,32 @@
   -->
   <ItemGroup>
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2957" />
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.6.5" />
+    <!--
+      Only the Windows App SDK components Talky uses, instead of the Microsoft.WindowsAppSDK
+      metapackage (which also pulls in AI, ML/ONNX Runtime + DirectML, Search, Widgets and DWriteCore,
+      ~50 MB of unused DLLs in self-contained builds). Keep the three versions identical.
+        Foundation: app notifications, app lifecycle, MRT resources (brings InteractiveExperiences + Base).
+        WinUI:      XAML.
+        Runtime:    framework package reference for packaged (MSIX / F5) builds.
+    -->
+    <PackageReference Include="Microsoft.WindowsAppSDK.Foundation" Version="2.6.5" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.WinUI" Version="2.6.5" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.Runtime" Version="2.6.5" />
+    <!--
+      The Community Toolkit packages depend on the metapackage (>= 1.6), which would bring every component back.
+      Pin it to the same version and exclude the components Talky doesn't use: a direct reference's
+      ExcludeAssets wins over the transitive path, so none of their DLLs or build logic reach the app.
+    -->
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.6.5" ExcludeAssets="all" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.AI" Version="2.6.5" ExcludeAssets="all" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.ML" Version="2.6.5" ExcludeAssets="all" />
+    <PackageReference Include="Microsoft.Windows.AI.MachineLearning" Version="2.4.89" ExcludeAssets="all" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.Search" Version="2.6.5" ExcludeAssets="all" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.Widgets" Version="2.6.5" ExcludeAssets="all" />
+    <PackageReference Include="Microsoft.WindowsAppSDK.DWrite" Version="2.6.5" ExcludeAssets="all" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools.WinApp" Version="0.8.0" />
+    <!-- Installer + updates from GitHub Releases (build-release.ps1). Keep in sync with vpk in dotnet-tools.json. -->
+    <PackageReference Include="Velopack" Version="1.2.161" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.251219" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.15" />
@@ -88,7 +114,15 @@
   <PropertyGroup>
     <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
     <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
+    <!-- Self-contained publishes (MSIX) only: build-release.ps1 overrides this, since trimming needs a self-contained .NET. -->
     <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
     <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
   </PropertyGroup>
+  <ItemGroup>
+    <!--
+      Precompile Talky's own code (and Concentus etc.) for fast startup, but not the big WinRT projections:
+      ReadyToRun more than doubles them (+12 MB, mostly Microsoft.WinUI.dll) and only a small part of them runs.
+    -->
+    <PublishReadyToRunExclude Include="Microsoft.WinUI.dll;Microsoft.InteractiveExperiences.Projection.dll;Microsoft.Web.WebView2.Core.Projection.dll" />
+  </ItemGroup>
 </Project>

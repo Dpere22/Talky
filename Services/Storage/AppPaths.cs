@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Talky.Services.Storage;
 
 public interface IAppPaths
@@ -13,6 +15,9 @@ public interface IAppPaths
 
 public sealed class AppPaths : IAppPaths
 {
+    /// <summary>Everything Talky stores, relative to the data root (used when migrating the old location).</summary>
+    private static readonly string[] DataEntries = ["settings.json", "friends.json", "messages", "profiles"];
+
     public AppPaths()
     {
         ProfileName = ReadProfileName();
@@ -25,8 +30,10 @@ public sealed class AppPaths : IAppPaths
         }
         catch (InvalidOperationException)
         {
-            // Unpackaged: %LOCALAPPDATA%\Talky
-            root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Talky");
+            // Unpackaged: %APPDATA%\Talky. Not %LOCALAPPDATA%\Talky: that is the Velopack install folder,
+            // which the installer and uninstaller replace wholesale.
+            root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Talky");
+            MigrateFromLocalAppData(root);
         }
 
         DataDirectory = ProfileName is null ? root : Path.Combine(root, "profiles", ProfileName);
@@ -39,6 +46,70 @@ public sealed class AppPaths : IAppPaths
     public string MessagesDirectory { get; }
 
     public string? ProfileName { get; }
+
+    /// <summary>
+    /// Talky 1.0 (portable zip) kept its data in %LOCALAPPDATA%\Talky. Move it once, entry by entry, so that
+    /// a Velopack install living in the same folder (Update.exe, current\, packages\) is never touched.
+    /// </summary>
+    private static void MigrateFromLocalAppData(string newRoot)
+    {
+        var oldRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Talky");
+        if (Directory.Exists(newRoot) || !Directory.Exists(oldRoot))
+        {
+            return;
+        }
+
+        try
+        {
+            Directory.CreateDirectory(newRoot);
+            foreach (var entry in DataEntries)
+            {
+                var from = Path.Combine(oldRoot, entry);
+                var to = Path.Combine(newRoot, entry);
+                if (File.Exists(from))
+                {
+                    File.Move(from, to);
+                }
+                else if (Directory.Exists(from))
+                {
+                    MoveDirectory(from, to);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // Worst case the user starts fresh; the old files are still where they were.
+            Debug.WriteLine($"[Paths] Migrating {oldRoot} failed: {ex.Message}");
+        }
+    }
+
+    private static void MoveDirectory(string from, string to)
+    {
+        try
+        {
+            Directory.Move(from, to);
+        }
+        catch (IOException)
+        {
+            // Different volumes (redirected AppData): copy, then remove the original.
+            CopyDirectory(from, to);
+            Directory.Delete(from, recursive: true);
+        }
+    }
+
+    private static void CopyDirectory(string from, string to)
+    {
+        Directory.CreateDirectory(to);
+        foreach (var file in Directory.EnumerateFiles(from))
+        {
+            File.Copy(file, Path.Combine(to, Path.GetFileName(file)), overwrite: true);
+        }
+
+        foreach (var dir in Directory.EnumerateDirectories(from))
+        {
+            CopyDirectory(dir, Path.Combine(to, Path.GetFileName(dir)));
+        }
+    }
 
     private static string? ReadProfileName()
     {

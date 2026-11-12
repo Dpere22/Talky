@@ -46,7 +46,8 @@ public sealed partial class ShellViewModel : ObservableObject
         IUiDispatcher dispatcher,
         IWindowService window,
         ISoundEffects sounds,
-        CallViewModel callViewModel)
+        CallViewModel callViewModel,
+        UpdatesViewModel updatesViewModel)
     {
         _friends = friends;
         _chat = chat;
@@ -61,6 +62,7 @@ public sealed partial class ShellViewModel : ObservableObject
         _window = window;
         _sounds = sounds;
         Call = callViewModel;
+        Updates = updatesViewModel;
 
         _typingTimer = DispatcherQueue.GetForCurrentThread().CreateTimer();
         _typingTimer.Interval = TimeSpan.FromSeconds(1);
@@ -72,6 +74,8 @@ public sealed partial class ShellViewModel : ObservableObject
     public LocalUserViewModel Me { get; } = new();
 
     public CallViewModel Call { get; }
+
+    public UpdatesViewModel Updates { get; }
 
     [ObservableProperty]
     public partial FriendViewModel? SelectedFriend { get; set; }
