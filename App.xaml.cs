@@ -11,6 +11,7 @@ using Talky.Services.Networking;
 using Talky.Services.ScreenShare;
 using Talky.Services.Storage;
 using Talky.Services.UI;
+using Talky.Services.Updates;
 using Talky.ViewModels;
 
 namespace Talky;
@@ -64,6 +65,8 @@ public partial class App : Application
         HandleNotificationLaunch(notifications);
 
         Window.Activate();
+
+        GetService<IUpdateService>().Start();
     }
 
     private static IServiceProvider ConfigureServices(Microsoft.UI.Dispatching.DispatcherQueue dispatcherQueue)
@@ -92,9 +95,11 @@ public partial class App : Application
         services.AddSingleton<ISoundEffects, SoundEffects>();
         services.AddSingleton<IScreenShareService, ScreenShareService>();
         services.AddSingleton<ICallService, CallService>();
+        services.AddSingleton<IUpdateService, UpdateService>();
 
         // View models
         services.AddSingleton<CallViewModel>();
+        services.AddSingleton<UpdatesViewModel>();
         services.AddSingleton<ShellViewModel>();
         services.AddTransient<SettingsViewModel>();
 
@@ -128,6 +133,7 @@ public partial class App : Application
         GetService<IVoiceTransport>().Stop();
         GetService<IPeerNetwork>().Stop();
         GetService<IMessageStore>().Flush();
+        (GetService<IUpdateService>() as IDisposable)?.Dispose();
         (GetService<ISoundEffects>() as IDisposable)?.Dispose();
     }
 

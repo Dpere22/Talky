@@ -23,18 +23,28 @@ Talky runs on **Windows 11, version 24H2 or later** (x64 or ARM64; noise suppres
 Talky uses port **47820** (TCP for chat/screen sharing, UDP for voice). You can change it in Settings; a friend
 on a non-default port is added as `address:port`.
 
-## Sharing it with friends
+## Installing
 
-```powershell
-.\build-portable.ps1          # -> AppPackages\Talky_<version>_x64_portable.zip
-```
+Download **`Talky-win-x64-Setup.exe`** (or `-arm64` for ARM PCs) from the
+[latest release](https://github.com/Dpere22/Talky/releases/latest) and run it. Talky installs just for you (no admin),
+adds Start menu and desktop shortcuts and starts. If the
+[.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) isn't installed yet, Setup installs it first.
 
-Send the zip. Friends extract it anywhere and run `Talky.exe` — no installer, certificate or runtime needed.
-If Windows SmartScreen warns on first run, choose **More info → Run anyway**, and allow Talky through the
-firewall on private networks. To update, replace the files in the same folder; chats and friends are kept
-(they live in `%LOCALAPPDATA%\Talky`).
+- Talky isn't code-signed yet, so Windows SmartScreen may warn: choose **More info → Run anyway**.
+- Allow Talky through Windows Firewall on **private networks** when asked.
+- Talky updates itself from GitHub Releases: when an update is ready you'll see **Restart now** (or it installs the next time you open Talky).
+- Uninstall from **Settings → Apps**. Your chats and friends stay in `%APPDATA%\Talky`.
 
-For a signed, installable MSIX instead, see `build-msix.ps1` (needs a signing certificate — Windows won't
+## Releasing
+
+1. Bump `<Version>` in `Talky.csproj` and `Identity Version` in `Package.appxmanifest`. Optionally add `release-notes/v<version>.md`.
+2. Commit, push, then `git tag v<version>` and `git push origin v<version>`.
+
+The [Release workflow](.github/workflows/release.yml) builds both architectures with
+[Velopack](https://velopack.io) and publishes the GitHub release. To build locally: `.\build-release.ps1`
+(output in `AppPackages\Releases`). `-Publish` uploads the release from your own machine instead of CI.
+
+For a signed MSIX instead, see `build-msix.ps1` (needs a signing certificate, because Windows won't
 sideload an unsigned MSIX that contains an app).
 
 ## How it works
@@ -47,8 +57,9 @@ See [CLAUDE.md](CLAUDE.md) for the architecture, wire protocol and conventions.
 | Transport | One TCP connection per friend (framed, prioritised), UDP for voice |
 | Audio | Windows AudioGraph (WASAPI) → RNNoise → Opus (Concentus) → jitter buffer |
 | Screen | Windows.Graphics.Capture → change-detected tiles → WIC JPEG (4:4:4) |
-| Storage | JSON in the app's local data folder |
+| Storage | JSON in `%APPDATA%\Talky` (installed) or the package data folder (MSIX) |
+| Install / updates | Velopack Setup + delta updates from GitHub Releases; shared .NET 10 runtime, Windows App SDK bundled (only the parts Talky uses) |
 
 ## Open-source components
 
-RNNoise (Xiph.Org, BSD-3-Clause) · Concentus/Opus (BSD-3-Clause) · Windows App SDK, WinUI, Windows Community Toolkit (MIT).
+RNNoise (Xiph.Org, BSD-3-Clause) · Concentus/Opus (BSD-3-Clause) · Windows App SDK, WinUI, Windows Community Toolkit (MIT) · Velopack (MIT).

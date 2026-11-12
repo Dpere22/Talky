@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Dispatching;
@@ -31,7 +30,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         IVoiceEngine engine,
         ICallService call,
         IPeerNetwork network,
-        IWindowService window)
+        IWindowService window,
+        UpdatesViewModel updates)
     {
         _settings = settings;
         _devices = devices;
@@ -39,6 +39,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _call = call;
         _network = network;
         _window = window;
+        Updates = updates;
 
         var s = settings.Current;
         DisplayName = s.DisplayName;
@@ -82,7 +83,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     public string? ListenError => _network.ListenError;
 
-    public string Version => Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.1.0";
+    public string Version => UpdatesViewModel.CurrentVersion;
+
+    public UpdatesViewModel Updates { get; }
 
     [ObservableProperty]
     public partial string DisplayName { get; set; }
