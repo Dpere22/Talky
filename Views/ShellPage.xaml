@@ -6,7 +6,8 @@
     xmlns:controls="using:Talky.Views.Controls"
     xmlns:helpers="using:Talky.Helpers"
     xmlns:vm="using:Talky.ViewModels"
-    Background="Transparent">
+    Background="Transparent"
+    KeyboardAcceleratorPlacementMode="Hidden">
 
     <Grid>
         <Grid.ColumnDefinitions>

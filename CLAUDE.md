@@ -57,6 +57,8 @@ with a nickname. Group chats are intentionally out of scope for now.
 - ListView items are announced via `ToString()` — keep the overrides in `FriendViewModel`/`MessageViewModel`.
 - `Buffer` is ambiguous when `Windows.Storage.Streams` is imported — use `System.Buffer`.
 - `XamlRoot` is null in the `Window` constructor; use `GetDpiForWindow` for initial sizing.
+- `KeyboardAccelerators` on a container (e.g. `ShellPage`'s Escape) show an auto-generated key-hint tooltip over
+  every child without its own tooltip — set `KeyboardAcceleratorPlacementMode="Hidden"` on that container.
 
 ## Build / run / test
 - Build: `dotnet build -p:Platform=x64` (also ARM64). Run packaged with F5 in VS or `dotnet run -p:Platform=x64` (WinApp tooling registers a debug identity).
